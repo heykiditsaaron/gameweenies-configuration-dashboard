@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "id": "mockmod.example",
+  "title": "Mock Module Example",
+  "description": "Example configuration demonstrating the MVP schema format.",
+  "type": "object",
+  "fields": {
+    "playerName": {
+      "type": "string",
+      "required": true,
+      "default": "Weenie",
+      "description": "Player display name.",
+      "validation": {
+        "minLength": 1,
+        "maxLength": 32,
+        "regex": "^[A-Za-z0-9_]+$"
+      },
+      "ui": {
+        "control": "text",
+        "placeholder": "Enter your player name",
+        "display": "block"
+      }
+    },
+    "difficulty": {
+      "type": "enum",
+      "options": ["easy", "medium", "hard"],
+      "required": true,
+      "default": "easy",
+      "description": "Difficulty level for gameplay.",
+      "ui": {
+        "control": "select",
+        "display": "block"
+      }
+    },
+    "spawnPoints": {
+      "type": "array",
+      "itemType": "string",
+      "required": false,
+      "default": [],
+      "description": "List of spawn point identifiers.",
+      "validation": {
+        "minItems": 0,
+        "maxItems": 12
+      },
+      "ui": {
+        "control": "textarea",
+        "placeholder": "One spawn point per line",
+        "display": "block"
+      }
+    },
+    "spawnSettings": {
+      "type": "object",
+      "description": "Controls enemy spawn system.",
+      "fields": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "required": true,
+          "description": "Enable or disable enemy spawns.",
+          "ui": {
+            "control": "checkbox",
+            "display": "inline"
+          }
+        },
+        "rate": {
+          "type": "number",
+          "default": 1.0,
+          "required": true,
+          "description": "Spawn rate per second.",
+          "validation": {
+            "min": 0.1,
+            "max": 5
+          },
+          "ui": {
+            "control": "slider",
+            "display": "block"
+          }
+        }
+      }
+    }
+  }
+}

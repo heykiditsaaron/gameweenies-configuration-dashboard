@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "type": "object",
+  "fields": {
+    "exampleField": {
+      "type": "string",
+      "required": false,
+      "default": null,
+      "description": "Explain what this field does.",
+      "validation": {
+        "minLength": null,
+        "maxLength": null,
+        "regex": null,
+        "min": null,
+        "max": null,
+        "minItems": null,
+        "maxItems": null
+      },
+      "ui": {
+        "control": "text",
+        "placeholder": "",
+        "display": "block"
+      }
+    }
+  }
+}

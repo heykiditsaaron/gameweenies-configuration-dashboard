@@ -1,0 +1,46 @@
+{
+  "validExamples": [
+    {
+      "playerName": "Weenie",
+      "difficulty": "easy",
+      "spawnPoints": [],
+      "spawnSettings": {
+        "enabled": true,
+        "rate": 1.0
+      }
+    },
+    {
+      "playerName": "ProPlayer123",
+      "difficulty": "hard",
+      "spawnPoints": ["A1", "B2", "C3"],
+      "spawnSettings": {
+        "enabled": false,
+        "rate": 2.5
+      }
+    }
+  ],
+  "invalidExamples": [
+    {
+      "playerName": "ILLEGAL NAME!",
+      "difficulty": "easy",
+      "spawnPoints": [],
+      "spawnSettings": {
+        "enabled": true,
+        "rate": 1.0
+      }
+    },
+    {
+      "playerName": "ValidName",
+      "difficulty": "medium",
+      "spawnPoints": [],
+      "spawnSettings": {
+        "enabled": true,
+        "rate": 99
+      }
+    },
+    {
+      "difficulty": "easy",
+      "spawnPoints": []
+    }
+  ]
+}
