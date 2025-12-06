@@ -1,0 +1,48 @@
+    name: Import Labels
+
+    on:
+      push:
+        branches:
+          - main # Trigger on push to the main branch
+        paths:
+          - '.github/labels.json' # Only run if labels.json changes
+
+    jobs:
+      import-labels:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Import Labels
+            uses: actions/github-script@v7
+            with:
+              script: |
+                const labels = require('./.github/labels.json');
+                for (const label of labels) {
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description,
+                    });
+                    console.log(`Label "${label.name}" created.`);
+                  } catch (error) {
+                    if (error.status === 422 && error.message.includes('already_exists')) {
+                      console.log(`Label "${label.name}" already exists. Updating...`);
+                      await github.rest.issues.updateLabel({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        current_name: label.name,
+                        name: label.name,
+                        color: label.color,
+                        description: label.description,
+                      });
+                      console.log(`Label "${label.name}" updated.`);
+                    } else {
+                      console.error(`Error processing label "${label.name}":`, error);
+                    }
+                  }
+                }
