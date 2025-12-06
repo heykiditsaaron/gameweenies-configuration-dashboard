@@ -1,0 +1,144 @@
+{
+    "labels": [
+        {
+            "name": "phase2",
+            "color": "b19cd9",
+            "description": "Schema System tasks"
+        },
+        {
+            "name": "phase3",
+            "color": "b19cd9",
+            "description": "Backend Core tasks"
+        },
+        {
+            "name": "phase4",
+            "color": "b19cd9",
+            "description": "Frontend UI tasks"
+        },
+        {
+            "name": "phase5",
+            "color": "b19cd9",
+            "description": "Deployment Layer tasks"
+        },
+        {
+            "name": "phase6",
+            "color": "b19cd9",
+            "description": "Versioning tasks"
+        },
+        {
+            "name": "phase7",
+            "color": "b19cd9",
+            "description": "RBAC tasks"
+        },
+        {
+            "name": "phase8",
+            "color": "b19cd9",
+            "description": "UX Workflow tasks"
+        },
+        {
+            "name": "phase9",
+            "color": "b19cd9",
+            "description": "Infrastructure and CI tasks"
+        },
+        {
+            "name": "schema",
+            "color": "1abc9c",
+            "description": "Schema-related work"
+        },
+        {
+            "name": "backend",
+            "color": "3498db",
+            "description": "Backend services and logic"
+        },
+        {
+            "name": "frontend",
+            "color": "9b59b6",
+            "description": "Frontend components/UI work"
+        },
+        {
+            "name": "ui",
+            "color": "e67e22",
+            "description": "Interface and interaction design"
+        },
+        {
+            "name": "config-processing",
+            "color": "f1c40f",
+            "description": "Config transformation, reading, parsing"
+        },
+        {
+            "name": "module-system",
+            "color": "2ecc71",
+            "description": "Module definition and runtime logic"
+        },
+        {
+            "name": "deployment",
+            "color": "e74c3c",
+            "description": "Deployment, SSH, SFTP tasks"
+        },
+        {
+            "name": "versioning",
+            "color": "34495e",
+            "description": "Versioning, diff, rollback system"
+        },
+        {
+            "name": "server-management",
+            "color": "95a5a6",
+            "description": "Game server-level operations"
+        },
+        {
+            "name": "feat",
+            "color": "27ae60",
+            "description": "A new feature"
+        },
+        {
+            "name": "fix",
+            "color": "e74c3c",
+            "description": "A bug fix"
+        },
+        {
+            "name": "docs",
+            "color": "2980b9",
+            "description": "Documentation work"
+        },
+        {
+            "name": "refactor",
+            "color": "8e44ad",
+            "description": "Code that restructures without changing functionality"
+        },
+        {
+            "name": "chore",
+            "color": "bdc3c7",
+            "description": "Maintenance and cleanup work"
+        },
+        {
+            "name": "test",
+            "color": "2c3e50",
+            "description": "Test additions or updates"
+        },
+        {
+            "name": "bug",
+            "color": "ff4757",
+            "description": "Bug reports"
+        },
+        {
+            "name": "enhancement",
+            "color": "ffa502",
+            "description": "Additional improvements beyond MVP"
+        },
+        {
+            "name": "task",
+            "color": "57606a",
+            "description": "General development task"
+        },
+        {
+            "name": "help wanted",
+            "color": "1abc9c",
+            "description": "Tasks where assistance is welcome"
+        },
+        {
+            "name": "good first issue",
+            "color": "2ecc71",
+            "description": "Easy issues suitable for onboarding"
+        }
+    ]
+}
