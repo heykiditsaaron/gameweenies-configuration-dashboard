@@ -1,0 +1,32 @@
+{
+  "id": 123,
+  "fields": {
+    "missingType": {
+      "description": 42
+    },
+    "badEnum": {
+      "type": "enum",
+      "options": [],
+      "default": "not-in-options"
+    },
+    "brokenArray": {
+      "type": "array",
+      "default": "not-an-array"
+    },
+    "nestedObject": {
+      "type": "object",
+      "fields": {
+        "wrongDefault": {
+          "type": "string",
+          "default": 999
+        }
+      }
+    },
+    "badUi": {
+      "type": "string",
+      "ui": {
+        "component": { "nested": true }
+      }
+    }
+  }
+}

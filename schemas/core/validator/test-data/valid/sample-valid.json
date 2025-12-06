@@ -1,0 +1,42 @@
+{
+  "id": "sample.valid",
+  "version": "1.0.0",
+  "fields": {
+    "title": {
+      "type": "string",
+      "description": "A title string",
+      "default": "Hello"
+    },
+    "count": {
+      "type": "number",
+      "description": "A numeric field",
+      "default": 5,
+      "validation": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "mode": {
+      "type": "enum",
+      "description": "Choose a mode",
+      "options": ["easy", "medium", "hard"],
+      "default": "easy"
+    },
+    "settings": {
+      "type": "object",
+      "fields": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  }
+}
