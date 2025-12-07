@@ -1,22 +1,20 @@
-## Summary
-Describe what this PR does.
+# Phase <N> — Task <M> Pull Request
 
-## Task Context
-**Phase:**  
-**Task Number:**  
-**Subtask:**  
+## 📝 Summary
+Provide a brief summary of what this task implements.
 
-## Changes
-- 
-- 
-- 
+## 📁 Files Added / Modified
+- List all files with exact paths
 
-## Verification Steps
-Explain how functionality was tested or verified.
+## 🎯 Purpose
+Explain what these changes accomplish.
 
-## Checklist
-- [ ] Branch name follows format: phase<phase>-task<task>-<description>
-- [ ] Commit messages follow Conventional Commits
-- [ ] Code follows project architecture & folder structure
-- [ ] No direct commits to main
-- [ ] All relevant documentation updated
+## ✔ Behavior Implemented
+- Describe functionality delivered
+- Mention tests or validations if applicable
+
+## 🔧 Notes / Future Enhancements
+- Optional items for future tasks
+
+## 🔗 Main Brain Approval
+Paste Main Brain approval message if needed.

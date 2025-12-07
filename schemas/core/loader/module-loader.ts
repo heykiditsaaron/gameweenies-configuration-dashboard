@@ -27,6 +27,9 @@ import {
 
 import { runSchemaValidation } from "./validator-bridge";
 
+import { SchemaLike } from "../config-generator/types";
+
+
 // ------------------------------------------------------
 // loadSingleModule(moduleDirPath)
 // ------------------------------------------------------
