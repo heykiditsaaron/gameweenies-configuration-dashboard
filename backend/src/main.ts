@@ -1,71 +1,25 @@
-// main.ts
+// backend/src/main.ts
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-
-// Load environment config utilities
-import { getEnvironmentConfig } from './config/environment.config';
-
-// Correct import path for SftpService
-import { SftpService } from './sftp/sftp.service';
+import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { AppModule } from "./app.module";
+import { getEnvironmentConfig } from "./config/environment.config";
 
 async function bootstrap() {
-    // Load validated environment config
-    const env = getEnvironmentConfig();
+  const env = getEnvironmentConfig();
 
-    const app = await NestFactory.create(AppModule);
+  // Create NestJS app in Express mode
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-    /**
-     * ---------------------------
-     * Step 3: Lightweight Logger
-     * ---------------------------
-     */
-    app.use((req, res, next) => {
-        const start = Date.now();
+  // Reverse proxy support
+  if (env.app.trustProxy) {
+    app.set("trust proxy", true);
+  }
 
-        res.on('finish', () => {
-            const duration = Date.now() - start;
-            console.log(`${req.method} ${req.originalUrl || req.url} → ${duration}ms`);
-        });
-
-        next();
-    });
-
-    /**
-     * ---------------------------
-     * Step 3: Reverse Proxy Support
-     * ---------------------------
-     */
-    if (typeof (app as any).set === 'function') {
-        (app as any).set('trust proxy', env.trustProxy ? 1 : 0);
-    }
-
-    /**
-     * ---------------------------
-     * Step 3: CORS
-     * ---------------------------
-     */
-    app.enableCors({
-        origin: true,
-        credentials: true,
-    });
-
-    /**
-     * ---------------------------
-     * Step 4: (Optional) Debug print
-     * ---------------------------
-     * Ensures SFTP config loads without error.
-     */
-    const sftp = app.get(SftpService);
-    console.log('Loaded SFTP servers:', sftp.getServers());
-
-    /**
-     * ---------------------------
-     * Start server
-     * ---------------------------
-     */
-    await app.listen(env.port, env.host);
-    console.log(`Backend running at http://${env.host}:${env.port}`);
+  await app.listen(env.app.port, env.app.host);
+  console.log(
+    `Backend running at http://${env.app.host}:${env.app.port} (env: ${env.app.env})`
+  );
 }
 
 bootstrap();
