@@ -9,12 +9,13 @@ export interface ModuleListResponse {
 }
 
 /**
- * ModulesService
- *
- * Read-only bridge over the Phase 2 module loader.
- * Delegates to the JSON-only bridge (loadAllModulesBridge) and
- * normalizes errors into simple string messages.
+ * Extended result for getAllModules() — includes an error string instead of array.
  */
+export interface ModuleListResult {
+  modules: any[];
+  error: string | null;
+}
+
 @Injectable()
 export class ModulesService {
   async getModuleList(): Promise<ModuleListResponse> {
@@ -26,6 +27,28 @@ export class ModulesService {
     return {
       modules: modulesArray,
       errors: errorMessages,
+    };
+  }
+
+  /**
+   * Stable method used by the new UsersModulesController.
+   * Returns:
+   *   { modules, error: null } on success
+   *   { modules: [], error } on failure
+   */
+  async getAllModules(): Promise<ModuleListResult> {
+    const { modules, errors } = await loadAllModulesBridge();
+
+    if (errors.length > 0) {
+      return {
+        modules: [],
+        error: errors.map((e) => e.message).join("; "),
+      };
+    }
+
+    return {
+      modules: Array.isArray(modules) ? modules : [],
+      error: null,
     };
   }
 }
