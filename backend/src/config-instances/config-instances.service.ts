@@ -5,11 +5,24 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigInstanceEntity } from "./config-instance.entity";
 
+export interface FormattedConfigInstanceItem {
+  id: string;
+  moduleName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FormattedConfigInstanceResult {
+  userId: string;
+  count: number;
+  items: FormattedConfigInstanceItem[];
+}
+
 /**
  * ConfigInstancesService
  *
- * Basic CRUD persistence for configuration instances.
- * No validation, merging, or remote application logic is performed here.
+ * CRUD persistence for configuration instances.
+ * Step 14 adds: findAllForUserFormatted() for response normalization.
  */
 @Injectable()
 export class ConfigInstancesService {
@@ -56,5 +69,29 @@ export class ConfigInstancesService {
   async delete(id: string): Promise<boolean> {
     const result = await this.repo.delete(id);
     return (result.affected ?? 0) > 0;
+  }
+
+  /**
+   * NEW IN STEP 14:
+   * Returns a formatted representation of config instances for the user.
+   * No configData is exposed.
+   */
+  async findAllForUserFormatted(
+    userId: string,
+  ): Promise<FormattedConfigInstanceResult> {
+    const list = await this.findAllForUser(userId);
+
+    const items = list.map((ci) => ({
+      id: ci.id,
+      moduleName: ci.moduleName,
+      createdAt: ci.createdAt.toISOString(),
+      updatedAt: ci.updatedAt.toISOString(),
+    }));
+
+    return {
+      userId,
+      count: items.length,
+      items,
+    };
   }
 }
