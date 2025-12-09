@@ -20,6 +20,15 @@ function parseNumber(value: string | undefined, defaultValue: number): number {
   return isNaN(n) ? defaultValue : n;
 }
 
+export interface DatabaseConfig {
+  type: "postgres";
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  database: string;
+}
+
 /** Base environment config interface */
 export interface EnvironmentConfig {
   app: {
@@ -30,6 +39,8 @@ export interface EnvironmentConfig {
   };
 
   sftp: SftpConfig;
+
+  database: DatabaseConfig;
 }
 
 /** Loads environment variables + safe defaults */
@@ -39,18 +50,30 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   const port = parseNumber(process.env.PORT, 3000);
   const trustProxy = parseBoolean(process.env.TRUST_PROXY, false);
 
-  /**
-   * SFTP configuration:
-   * - Reads SFTP_SERVERS as a JSON array of credentials.
-   * - Missing / empty → treated as "no SFTP configured".
-   * - Invalid JSON / malformed entries → reported via validation, never thrown.
-   */
+  // --- SFTP ---
   const sftpEnv = process.env.SFTP_SERVERS;
   const sftp: SftpConfig = validateSftpConfig(sftpEnv);
+
+  // --- DATABASE (safe defaults, never throw) ---
+  const dbHost = process.env.DB_HOST ?? "localhost";
+  const dbPort = parseNumber(process.env.DB_PORT, 5432);
+  const dbUser = process.env.DB_USER ?? "postgres";
+  const dbPass = process.env.DB_PASSWORD ?? "";
+  const dbName = process.env.DB_NAME ?? "appdb";
+
+  const database: DatabaseConfig = {
+    type: "postgres",
+    host: dbHost,
+    port: dbPort,
+    username: dbUser,
+    password: dbPass,
+    database: dbName,
+  };
 
   return {
     app: { env, host, port, trustProxy },
     sftp,
+    database,
   };
 }
 
