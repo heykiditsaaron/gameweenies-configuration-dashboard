@@ -9,31 +9,38 @@ import {
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { ModulesService } from "../modules/modules.service";
+import { ConfigInstancesService } from "../config-instances/config-instances.service";
 
 /**
  * UsersModulesController
  *
- * MVP placeholder for user → module associations.
- * No persistence; always returns the full module list for any existing user.
+ * Step 12 originally: GET /users/:id/modules (module list)
+ * Step 14 adds new refinement for:
+ *
+ *    GET /users/:id/config-instances
+ *
+ * providing a normalized response shape for stored user config instances.
  */
-@Controller("users/:id/modules")
+@Controller()
 export class UsersModulesController {
   constructor(
     private readonly usersService: UsersService,
     private readonly modulesService: ModulesService,
+    private readonly configInstancesService: ConfigInstancesService,
   ) {}
 
-  @Get()
+  // -----------------------------------------
+  // (Existing Step 12 Route)
+  // GET /users/:id/modules
+  // -----------------------------------------
+  @Get("users/:id/modules")
   async getUserModules(@Param("id") id: string) {
-    // 1. Validate user exists
     const user = await this.usersService.findById(id);
     if (!user) {
       throw new NotFoundException({ error: "User not found" });
     }
 
-    // 2. Load modules via ModulesService
     const result = await this.modulesService.getAllModules();
-
     if (result.error) {
       throw new InternalServerErrorException({
         error: "Module listing unavailable",
@@ -44,5 +51,21 @@ export class UsersModulesController {
       userId: id,
       modules: result.modules,
     };
+  }
+
+  // -----------------------------------------
+  // NEW IN STEP 14:
+  // GET /users/:id/config-instances
+  // -----------------------------------------
+  @Get("users/:id/config-instances")
+  async getUserConfigInstances(@Param("id") id: string) {
+    // 1. Ensure the user exists
+    const user = await this.usersService.findById(id);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    // 2. Return normalized list from the service
+    return this.configInstancesService.findAllForUserFormatted(id);
   }
 }
