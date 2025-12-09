@@ -4,6 +4,8 @@ import { Injectable } from "@nestjs/common";
 import { ModuleDiscoveryService } from "./module-discovery.service";
 import { loadAllModulesBridge } from "./module-loader.bridge";
 import type { RawModuleDescriptor } from "./catalog/module-catalog.types";
+import type { ModuleCatalog } from "./catalog/module-catalog.types";
+import { ModuleCatalogService } from "./catalog/module-catalog.service";
 
 export interface ModuleListResponse {
   modules: any[];
@@ -19,6 +21,7 @@ export interface ModuleListResult {
 export class ModulesService {
   constructor(
     private readonly discovery: ModuleDiscoveryService,
+    private readonly catalog: ModuleCatalogService,
   ) {}
 
   async getModuleList(): Promise<ModuleListResponse> {
@@ -49,13 +52,24 @@ export class ModulesService {
     };
   }
 
-  /**
-   * NEW IN STEP 16:
-   *
-   * Direct passthrough to ModuleDiscoveryService.getRawModules().
-   * No filtering, no transformations — returns raw loader objects.
-   */
   async listRawModules(): Promise<RawModuleDescriptor[]> {
     return this.discovery.getRawModules();
+  }
+
+  /**
+   * NEW IN STEP 17:
+   *
+   * Produces a fully normalized ModuleCatalog.
+   *
+   * raw → catalog.normalizeCatalog(raw)
+   *
+   * - No tier logic
+   * - No filtering
+   * - No schema validation
+   * - No caching
+   */
+  async listModules(): Promise<ModuleCatalog> {
+    const raw = await this.discovery.getRawModules();
+    return this.catalog.normalizeCatalog(raw);
   }
 }
