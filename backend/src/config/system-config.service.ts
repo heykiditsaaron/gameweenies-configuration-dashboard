@@ -5,69 +5,76 @@ import { ENV_CONFIG } from "./environment.token";
 import type { EnvironmentConfig } from "./environment.config";
 import type { SftpConfig } from "./sftp/sftp.types";
 import { ModuleDiscoveryService } from "../modules/module-discovery.service";
-import type { ModuleStatus } from "../modules/module-discovery.service";
-import type { ModuleBridgeError } from "../modules/module-loader.bridge";
 
 /**
  * SystemConfigService
  *
- * Canonical, typed access point for backend configuration.
- * Wraps EnvironmentConfig and integrates Phase 2 module discovery.
+ * Provides typed access to environment configuration and integrates
+ * Phase 3.3 module discovery (raw loader output only).
+ *
+ * MVP NOTE:
+ * - EnvironmentConfig does NOT contain tier/version fields yet.
+ * - Tier will later come from a separate config source (GCD_TIER).
  */
 @Injectable()
 export class SystemConfigService {
   constructor(
-    @Inject(ENV_CONFIG) private readonly config: EnvironmentConfig,
-    private readonly moduleDiscovery: ModuleDiscoveryService
+    @Inject(ENV_CONFIG)
+    private readonly envConfig: EnvironmentConfig,
+
+    private readonly moduleDiscovery: ModuleDiscoveryService,
   ) {}
 
-  /** Returns raw NODE_ENV string. */
-  getEnv(): string {
-    return this.config.app.env;
+  /**
+   * Deployment tier (MVP = always "mvp").
+   * Future-phase logic will replace this with env-based tier resolution.
+   */
+  getDeploymentTier(): string {
+    return "mvp";
   }
 
-  /** True if NODE_ENV indicates production. */
-  isProduction(): boolean {
-    return this.getEnv().toLowerCase() === "production";
+  /** Full environment config, unmodified. */
+  getEnvironmentConfig(): EnvironmentConfig {
+    return this.envConfig;
   }
 
-  /** Returns the full app configuration block. */
-  getAppConfig(): EnvironmentConfig["app"] {
-    return this.config.app;
+  /** App-level configuration block. */
+  getAppConfig() {
+    return this.envConfig.app;
   }
 
-  /** Returns the validated SFTP configuration block. */
+  /** SFTP configuration block. */
   getSftpConfig(): SftpConfig {
-    return this.config.sftp;
+    return this.envConfig.sftp;
   }
 
-  /** Returns the configured application port. */
-  getPort(): number {
-    return this.config.app.port;
+  /** Database configuration block. */
+  getDatabaseConfig() {
+    return this.envConfig.database;
   }
 
-  /** Returns trustProxy boolean. */
-  getTrustProxy(): boolean {
-    return this.config.app.trustProxy;
+  /**
+   * Returns raw module metadata as discovered by the loader.
+   * No normalization, no validation, no tier logic.
+   */
+  async getRawDiscoveredModules() {
+    return this.moduleDiscovery.getRawModules();
   }
 
-  /** Returns all loaded modules from the discovery service. */
-  getLoadedModules(): unknown[] {
-    return this.moduleDiscovery.getModules();
-  }
-
-  /** Returns the default config for a given module id, if available. */
-  getDefaultConfigForModule(id: string): unknown | undefined {
-    return this.moduleDiscovery.getModuleDefaults(id);
-  }
-
-  /** Returns status information for a given module id, if available. */
-  getModuleStatus(id: string): ModuleStatus | undefined {
-    return this.moduleDiscovery.getModuleStatus(id);
-  }
-
-  /** Returns all module-related warnings from the discovery process. */
-  getModuleWarnings(): ModuleBridgeError[] {
-    return this.moduleDiscovery.getWarnings();
+  /**
+   * Diagnostic info for internal health checks.
+   * Minimal for MVP — only reports what we truly know.
+   */
+  getDiagnosticInfo() {
+    return {
+      appEnv: this.envConfig.app.env,
+      host: this.envConfig.app.host,
+      port: this.envConfig.app.port,
+      trustProxy: this.envConfig.app.trustProxy,
+      hasSftp: !!this.envConfig.sftp,
+      dbHost: this.envConfig.database.host,
+      dbName: this.envConfig.database.database,
+      tier: "mvp",
+    };
   }
 }

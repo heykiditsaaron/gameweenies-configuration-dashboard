@@ -1,16 +1,15 @@
 // backend/src/modules/modules.service.ts
 
 import { Injectable } from "@nestjs/common";
+import { ModuleDiscoveryService } from "./module-discovery.service";
 import { loadAllModulesBridge } from "./module-loader.bridge";
+import type { RawModuleDescriptor } from "./catalog/module-catalog.types";
 
 export interface ModuleListResponse {
   modules: any[];
   errors: string[];
 }
 
-/**
- * Extended result for getAllModules() — includes an error string instead of array.
- */
 export interface ModuleListResult {
   modules: any[];
   error: string | null;
@@ -18,6 +17,10 @@ export interface ModuleListResult {
 
 @Injectable()
 export class ModulesService {
+  constructor(
+    private readonly discovery: ModuleDiscoveryService,
+  ) {}
+
   async getModuleList(): Promise<ModuleListResponse> {
     const { modules, errors } = await loadAllModulesBridge();
 
@@ -30,12 +33,6 @@ export class ModulesService {
     };
   }
 
-  /**
-   * Stable method used by the new UsersModulesController.
-   * Returns:
-   *   { modules, error: null } on success
-   *   { modules: [], error } on failure
-   */
   async getAllModules(): Promise<ModuleListResult> {
     const { modules, errors } = await loadAllModulesBridge();
 
@@ -50,5 +47,15 @@ export class ModulesService {
       modules: Array.isArray(modules) ? modules : [],
       error: null,
     };
+  }
+
+  /**
+   * NEW IN STEP 16:
+   *
+   * Direct passthrough to ModuleDiscoveryService.getRawModules().
+   * No filtering, no transformations — returns raw loader objects.
+   */
+  async listRawModules(): Promise<RawModuleDescriptor[]> {
+    return this.discovery.getRawModules();
   }
 }
