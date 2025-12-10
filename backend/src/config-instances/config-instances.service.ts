@@ -22,6 +22,7 @@ import type {
   SimulatedAppliedFile,
   SimulatedApplyResult,
 } from "./config-apply-sim.types";
+import type { InstanceApplySummary } from "./config-apply-summary.types";
 
 import { ModulesService } from "../modules/modules.service";
 import type { ModuleCatalogEntry } from "../modules/catalog/module-catalog.types";
@@ -225,7 +226,7 @@ export class ConfigInstancesService {
       format: cf.format,
       required: cf.required,
       metadata: cf.metadata as Record<string, any> | undefined,
-      content: null, // ALWAYS null in Step 22
+      content: null,
     }));
 
     return {
@@ -261,7 +262,7 @@ export class ConfigInstancesService {
       format: cf.format,
       required: cf.required,
       metadata: cf.metadata as Record<string, any> | undefined,
-      simulatedContent: null, // ALWAYS null in Step 23
+      simulatedContent: null,
     }));
 
     return {
@@ -270,6 +271,31 @@ export class ConfigInstancesService {
       status: "simulated",
       message: "Apply pipeline stub executed",
       files,
+    };
+  }
+
+  // ---------------------------
+  // APPLY SUMMARY (Step 25)
+  // ---------------------------
+
+  async buildApplySummary(id: string): Promise<InstanceApplySummary> {
+    const instance = await this.findById(id);
+    if (!instance) {
+      throw new NotFoundException("Config instance not found");
+    }
+
+    const prepared = await this.prepareConfigInstance(id);
+    const mapping = await this.mapConfigFiles(id);
+    const surface = await this.buildContentSurface(id);
+    const simulated = await this.simulateApply(id);
+
+    return {
+      configInstanceId: id,
+      moduleName: instance.moduleName,
+      prepared,
+      mapping,
+      surface,
+      simulated,
     };
   }
 }
