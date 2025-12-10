@@ -6,16 +6,24 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { ConfigInstanceEntity } from "./config-instance.entity";
 
 import type { PreparedConfigInstance } from "./config-instance.types";
-import type { ConfigFileBinding, InstanceFileMapping } from "./config-file-mapping.types";
+import type {
+  ConfigFileBinding,
+  InstanceFileMapping,
+} from "./config-file-mapping.types";
+import type {
+  ConfigFileContentSurface,
+  InstanceContentSurface,
+} from "./config-content-surface.types";
 
 import { ModulesService } from "../modules/modules.service";
 import type { ModuleCatalogEntry } from "../modules/catalog/module-catalog.types";
 
 /**
- * Public-facing list item for user config instances.
+ * Public-facing list item (Step 14)
  */
 export interface FormattedConfigInstanceItem {
   id: string;
@@ -25,7 +33,7 @@ export interface FormattedConfigInstanceItem {
 }
 
 /**
- * Public-facing result for user config instance list.
+ * Public-facing formatted result (Step 14)
  */
 export interface FormattedConfigInstanceResult {
   userId: string;
@@ -84,7 +92,7 @@ export class ConfigInstancesService {
   }
 
   // ---------------------------
-  // FORMATTED USER OUTPUT (Step 14)
+  // FORMATTED LIST OUTPUT (Step 14)
   // ---------------------------
 
   async findAllForUserFormatted(
@@ -153,7 +161,7 @@ export class ConfigInstancesService {
   }
 
   // ---------------------------
-  // CONFIG FILE MAPPING (Step 21)
+  // FILE MAPPING (Step 21)
   // ---------------------------
 
   async mapConfigFiles(id: string): Promise<InstanceFileMapping> {
@@ -178,6 +186,42 @@ export class ConfigInstancesService {
       format: cf.format,
       required: cf.required,
       metadata: cf.metadata as Record<string, any> | undefined,
+    }));
+
+    return {
+      configInstanceId: instance.id,
+      moduleName: instance.moduleName,
+      files,
+    };
+  }
+
+  // ---------------------------
+  // CONTENT SURFACE (Step 22)
+  // ---------------------------
+
+  async buildContentSurface(id: string): Promise<InstanceContentSurface> {
+    const instance = await this.findById(id);
+    if (!instance) {
+      throw new NotFoundException("Config instance not found");
+    }
+
+    const catalog = await this.modulesService.listModules();
+
+    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
+      (m) => m.name === instance.moduleName,
+    );
+
+    if (!moduleEntry) {
+      throw new NotFoundException("Module not found");
+    }
+
+    const files: ConfigFileContentSurface[] = moduleEntry.configFiles.map((cf) => ({
+      fileId: cf.id,
+      path: cf.path,
+      format: cf.format,
+      required: cf.required,
+      metadata: cf.metadata as Record<string, any> | undefined,
+      content: null, // ALWAYS null in Step 22
     }));
 
     return {
