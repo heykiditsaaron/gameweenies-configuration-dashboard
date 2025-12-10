@@ -2,25 +2,42 @@
 
 import { Controller, Get } from "@nestjs/common";
 import { ModulesService } from "./modules.service";
+import type { ModuleCatalog } from "./catalog/module-catalog.types";
 import type { RawModuleDescriptor } from "./catalog/module-catalog.types";
 
+/**
+ * ModulesController
+ *
+ * STEP 18:
+ *  - GET /modules now returns the *normalized catalog*
+ *    produced by ModulesService.listModules().
+ *
+ * NOTE:
+ *  - GET /modules/raw remains intact for debugging
+ *    until Step 19 instructs us to remove it.
+ */
 @Controller("modules")
 export class ModulesController {
   constructor(private readonly modulesService: ModulesService) {}
 
+  /**
+   * NEW IN STEP 18
+   *
+   * Returns the normalized ModuleCatalog:
+   *   raw → ModuleCatalogService.normalizeCatalog(raw)
+   *
+   * This is now the primary public module listing endpoint.
+   */
   @Get()
-  async listModules() {
-    return this.modulesService.getModuleList();
+  async listCatalog(): Promise<ModuleCatalog> {
+    return this.modulesService.listModules();
   }
 
   /**
-   * NEW IN STEP 16:
-   * Temporary debug endpoint returning raw loader output.
+   * DEBUG ENDPOINT (kept temporarily until Step 19)
    *
-   * GET /modules/raw
-   *
-   * This will be removed once normalized catalog endpoints
-   * are introduced in Step 18/19.
+   * Returns raw loader output exactly as produced by the bridge.
+   * No normalization or processing.
    */
   @Get("raw")
   async listRaw(): Promise<RawModuleDescriptor[]> {
