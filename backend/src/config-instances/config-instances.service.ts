@@ -23,13 +23,11 @@ import type {
   SimulatedApplyResult,
 } from "./config-apply-sim.types";
 import type { InstanceApplySummary } from "./config-apply-summary.types";
+import type { ApplyReadinessResult } from "./config-apply-readiness.types";
 
 import { ModulesService } from "../modules/modules.service";
 import type { ModuleCatalogEntry } from "../modules/catalog/module-catalog.types";
 
-/**
- * Public-facing list item (Step 14)
- */
 export interface FormattedConfigInstanceItem {
   id: string;
   moduleName: string;
@@ -37,9 +35,6 @@ export interface FormattedConfigInstanceItem {
   updatedAt: string;
 }
 
-/**
- * Public-facing formatted result (Step 14)
- */
 export interface FormattedConfigInstanceResult {
   userId: string;
   count: number;
@@ -55,7 +50,7 @@ export class ConfigInstancesService {
   ) {}
 
   // ---------------------------
-  // CRUD OPERATIONS
+  // CRUD
   // ---------------------------
 
   async create(
@@ -71,14 +66,9 @@ export class ConfigInstancesService {
     return this.repo.save(entity);
   }
 
-  async update(
-    id: string,
-    configData: any,
-  ): Promise<ConfigInstanceEntity | null> {
+  async update(id: string, configData: any): Promise<ConfigInstanceEntity | null> {
     const existing = await this.repo.findOne({ where: { id } });
-    if (!existing) {
-      return null;
-    }
+    if (!existing) return null;
     existing.configData = configData;
     return this.repo.save(existing);
   }
@@ -97,7 +87,7 @@ export class ConfigInstancesService {
   }
 
   // ---------------------------
-  // FORMATTED LIST OUTPUT (Step 14)
+  // FORMATTED LIST (Step 14)
   // ---------------------------
 
   async findAllForUserFormatted(
@@ -105,7 +95,7 @@ export class ConfigInstancesService {
   ): Promise<FormattedConfigInstanceResult> {
     const list = await this.findAllForUser(userId);
 
-    const items: FormattedConfigInstanceItem[] = list.map((ci) => ({
+    const items = list.map((ci) => ({
       id: ci.id,
       moduleName: ci.moduleName,
       createdAt: ci.createdAt.toISOString(),
@@ -120,48 +110,39 @@ export class ConfigInstancesService {
   }
 
   // ---------------------------
-  // PREPARED CONFIG INSTANCE (Step 20)
+  // PREPARED INSTANCE (Step 20)
   // ---------------------------
 
   async prepareConfigInstance(id: string): Promise<PreparedConfigInstance> {
     const instance = await this.findById(id);
-    if (!instance) {
-      throw new NotFoundException("Config instance not found");
-    }
+    if (!instance) throw new NotFoundException("Config instance not found");
 
     const catalog = await this.modulesService.listModules();
+    const moduleEntry = catalog.find((m) => m.name === instance.moduleName);
 
-    const matchedModule: ModuleCatalogEntry | undefined = catalog.find(
-      (entry) => entry.name === instance.moduleName,
-    );
-
-    if (!matchedModule) {
-      throw new NotFoundException("Module not found");
-    }
-
-    const moduleMeta: PreparedConfigInstance["moduleMeta"] = {
-      id: matchedModule.id,
-      name: matchedModule.name,
-      displayName: matchedModule.displayName,
-      version: matchedModule.version,
-      description: matchedModule.description,
-      configFiles: matchedModule.configFiles.map((file) => ({
-        id: file.id,
-        path: file.path,
-        format: file.format,
-        required: file.required,
-        metadata: file.metadata as Record<string, any> | undefined,
-      })),
-      tags: matchedModule.tags,
-      tier: matchedModule.tier,
-    };
+    if (!moduleEntry) throw new NotFoundException("Module not found");
 
     return {
       id: instance.id,
       userId: instance.userId,
       moduleName: instance.moduleName,
       configData: instance.configData,
-      moduleMeta,
+      moduleMeta: {
+        id: moduleEntry.id,
+        name: moduleEntry.name,
+        displayName: moduleEntry.displayName,
+        version: moduleEntry.version,
+        description: moduleEntry.description,
+        tags: moduleEntry.tags,
+        tier: moduleEntry.tier,
+        configFiles: moduleEntry.configFiles.map((cf) => ({
+          id: cf.id,
+          path: cf.path,
+          format: cf.format,
+          required: cf.required,
+          metadata: cf.metadata as Record<string, any> | undefined,
+        })),
+      },
     };
   }
 
@@ -171,32 +152,23 @@ export class ConfigInstancesService {
 
   async mapConfigFiles(id: string): Promise<InstanceFileMapping> {
     const instance = await this.findById(id);
-    if (!instance) {
-      throw new NotFoundException("Config instance not found");
-    }
+    if (!instance) throw new NotFoundException("Config instance not found");
 
     const catalog = await this.modulesService.listModules();
+    const moduleEntry = catalog.find((m) => m.name === instance.moduleName);
 
-    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
-      (m) => m.name === instance.moduleName,
-    );
-
-    if (!moduleEntry) {
-      throw new NotFoundException("Module not found");
-    }
-
-    const files: ConfigFileBinding[] = moduleEntry.configFiles.map((cf) => ({
-      fileId: cf.id,
-      path: cf.path,
-      format: cf.format,
-      required: cf.required,
-      metadata: cf.metadata as Record<string, any> | undefined,
-    }));
+    if (!moduleEntry) throw new NotFoundException("Module not found");
 
     return {
       configInstanceId: instance.id,
       moduleName: instance.moduleName,
-      files,
+      files: moduleEntry.configFiles.map((cf) => ({
+        fileId: cf.id,
+        path: cf.path,
+        format: cf.format,
+        required: cf.required,
+        metadata: cf.metadata as Record<string, any> | undefined,
+      })),
     };
   }
 
@@ -206,71 +178,53 @@ export class ConfigInstancesService {
 
   async buildContentSurface(id: string): Promise<InstanceContentSurface> {
     const instance = await this.findById(id);
-    if (!instance) {
-      throw new NotFoundException("Config instance not found");
-    }
+    if (!instance) throw new NotFoundException("Config instance not found");
 
     const catalog = await this.modulesService.listModules();
+    const moduleEntry = catalog.find((m) => m.name === instance.moduleName);
 
-    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
-      (m) => m.name === instance.moduleName,
-    );
-
-    if (!moduleEntry) {
-      throw new NotFoundException("Module not found");
-    }
-
-    const files: ConfigFileContentSurface[] = moduleEntry.configFiles.map((cf) => ({
-      fileId: cf.id,
-      path: cf.path,
-      format: cf.format,
-      required: cf.required,
-      metadata: cf.metadata as Record<string, any> | undefined,
-      content: null,
-    }));
+    if (!moduleEntry) throw new NotFoundException("Module not found");
 
     return {
       configInstanceId: instance.id,
       moduleName: instance.moduleName,
-      files,
+      files: moduleEntry.configFiles.map((cf) => ({
+        fileId: cf.id,
+        path: cf.path,
+        format: cf.format,
+        required: cf.required,
+        metadata: cf.metadata as Record<string, any> | undefined,
+        content: null,
+      })),
     };
   }
 
   // ---------------------------
-  // SIMULATED APPLY PIPELINE (Step 23)
+  // SIMULATED APPLY (Step 23)
   // ---------------------------
 
   async simulateApply(id: string): Promise<SimulatedApplyResult> {
     const instance = await this.findById(id);
-    if (!instance) {
-      throw new NotFoundException("Config instance not found");
-    }
+    if (!instance) throw new NotFoundException("Config instance not found");
 
     const catalog = await this.modulesService.listModules();
+    const moduleEntry = catalog.find((m) => m.name === instance.moduleName);
 
-    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
-      (m) => m.name === instance.moduleName,
-    );
-
-    if (!moduleEntry) {
-      throw new NotFoundException("Module not found");
-    }
-
-    const files: SimulatedAppliedFile[] = moduleEntry.configFiles.map((cf) => ({
-      fileId: cf.id,
-      path: cf.path,
-      format: cf.format,
-      required: cf.required,
-      metadata: cf.metadata as Record<string, any> | undefined,
-      simulatedContent: null,
-    }));
+    if (!moduleEntry) throw new NotFoundException("Module not found");
 
     return {
       configInstanceId: instance.id,
       moduleName: instance.moduleName,
       status: "simulated",
       message: "Apply pipeline stub executed",
-      files,
+      files: moduleEntry.configFiles.map((cf) => ({
+        fileId: cf.id,
+        path: cf.path,
+        format: cf.format,
+        required: cf.required,
+        metadata: cf.metadata as Record<string, any> | undefined,
+        simulatedContent: null,
+      })),
     };
   }
 
@@ -280,22 +234,42 @@ export class ConfigInstancesService {
 
   async buildApplySummary(id: string): Promise<InstanceApplySummary> {
     const instance = await this.findById(id);
-    if (!instance) {
-      throw new NotFoundException("Config instance not found");
-    }
-
-    const prepared = await this.prepareConfigInstance(id);
-    const mapping = await this.mapConfigFiles(id);
-    const surface = await this.buildContentSurface(id);
-    const simulated = await this.simulateApply(id);
+    if (!instance) throw new NotFoundException("Config instance not found");
 
     return {
       configInstanceId: id,
       moduleName: instance.moduleName,
-      prepared,
-      mapping,
-      surface,
-      simulated,
+      prepared: await this.prepareConfigInstance(id),
+      mapping: await this.mapConfigFiles(id),
+      surface: await this.buildContentSurface(id),
+      simulated: await this.simulateApply(id),
+    };
+  }
+
+  // ---------------------------
+  // APPLY READINESS (Step 26)
+  // ---------------------------
+
+  async getApplyReadiness(id: string): Promise<ApplyReadinessResult> {
+    const instance = await this.findById(id);
+    if (!instance) throw new NotFoundException("Config instance not found");
+
+    const mapping = await this.mapConfigFiles(id);
+
+    const catalog = await this.modulesService.listModules();
+    const moduleEntry = catalog.find((m) => m.name === instance.moduleName);
+    if (!moduleEntry) throw new NotFoundException("Module not found");
+
+    const mappedIds = new Set(mapping.files.map((f) => f.fileId));
+    const missingRequiredFiles = moduleEntry.configFiles
+      .filter((cf) => cf.required && !mappedIds.has(cf.id))
+      .map((cf) => cf.id);
+
+    return {
+      configInstanceId: id,
+      moduleName: instance.moduleName,
+      ready: missingRequiredFiles.length === 0,
+      missingRequiredFiles,
     };
   }
 }
