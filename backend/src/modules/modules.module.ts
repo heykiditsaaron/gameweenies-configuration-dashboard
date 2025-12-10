@@ -6,13 +6,20 @@ import { ModulesService } from "./modules.service";
 import { ModuleDiscoveryService } from "./module-discovery.service";
 import { ModuleCatalogService } from "./catalog/module-catalog.service";
 
+/**
+ * ModulesModule
+ *
+ * STEP 19:
+ * - No debug controllers remain.
+ * - No wiring changes beyond ensuring ModulesController is still registered.
+ */
 @Module({
   imports: [],
   controllers: [ModulesController],
   providers: [
     ModulesService,
     ModuleDiscoveryService,
-    ModuleCatalogService, // <-- required for DI in ModulesService
+    ModuleCatalogService,
   ],
   exports: [
     ModulesService,

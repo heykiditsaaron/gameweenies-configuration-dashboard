@@ -52,21 +52,9 @@ export class ModulesService {
     };
   }
 
-  async listRawModules(): Promise<RawModuleDescriptor[]> {
-    return this.discovery.getRawModules();
-  }
-
   /**
-   * NEW IN STEP 17:
-   *
-   * Produces a fully normalized ModuleCatalog.
-   *
-   * raw → catalog.normalizeCatalog(raw)
-   *
-   * - No tier logic
-   * - No filtering
-   * - No schema validation
-   * - No caching
+   * STEP 17:
+   * Returns the fully normalized ModuleCatalog.
    */
   async listModules(): Promise<ModuleCatalog> {
     const raw = await this.discovery.getRawModules();
