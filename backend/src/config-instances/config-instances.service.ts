@@ -18,6 +18,10 @@ import type {
   ConfigFileContentSurface,
   InstanceContentSurface,
 } from "./config-content-surface.types";
+import type {
+  SimulatedAppliedFile,
+  SimulatedApplyResult,
+} from "./config-apply-sim.types";
 
 import { ModulesService } from "../modules/modules.service";
 import type { ModuleCatalogEntry } from "../modules/catalog/module-catalog.types";
@@ -227,6 +231,44 @@ export class ConfigInstancesService {
     return {
       configInstanceId: instance.id,
       moduleName: instance.moduleName,
+      files,
+    };
+  }
+
+  // ---------------------------
+  // SIMULATED APPLY PIPELINE (Step 23)
+  // ---------------------------
+
+  async simulateApply(id: string): Promise<SimulatedApplyResult> {
+    const instance = await this.findById(id);
+    if (!instance) {
+      throw new NotFoundException("Config instance not found");
+    }
+
+    const catalog = await this.modulesService.listModules();
+
+    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
+      (m) => m.name === instance.moduleName,
+    );
+
+    if (!moduleEntry) {
+      throw new NotFoundException("Module not found");
+    }
+
+    const files: SimulatedAppliedFile[] = moduleEntry.configFiles.map((cf) => ({
+      fileId: cf.id,
+      path: cf.path,
+      format: cf.format,
+      required: cf.required,
+      metadata: cf.metadata as Record<string, any> | undefined,
+      simulatedContent: null, // ALWAYS null in Step 23
+    }));
+
+    return {
+      configInstanceId: instance.id,
+      moduleName: instance.moduleName,
+      status: "simulated",
+      message: "Apply pipeline stub executed",
       files,
     };
   }
