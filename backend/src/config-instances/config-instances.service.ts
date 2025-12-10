@@ -1,16 +1,21 @@
 // backend/src/config-instances/config-instances.service.ts
 
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigInstanceEntity } from "./config-instance.entity";
 
 import type { PreparedConfigInstance } from "./config-instance.types";
+import type { ConfigFileBinding, InstanceFileMapping } from "./config-file-mapping.types";
+
 import { ModulesService } from "../modules/modules.service";
 import type { ModuleCatalogEntry } from "../modules/catalog/module-catalog.types";
 
 /**
- * Formatted list item for user-facing config-instance overviews.
+ * Public-facing list item for user config instances.
  */
 export interface FormattedConfigInstanceItem {
   id: string;
@@ -20,7 +25,7 @@ export interface FormattedConfigInstanceItem {
 }
 
 /**
- * Formatted result for user config instances.
+ * Public-facing result for user config instance list.
  */
 export interface FormattedConfigInstanceResult {
   userId: string;
@@ -28,13 +33,6 @@ export interface FormattedConfigInstanceResult {
   items: FormattedConfigInstanceItem[];
 }
 
-/**
- * ConfigInstancesService
- *
- * CRUD persistence for configuration instances.
- * Step 14 added: findAllForUserFormatted().
- * Step 20 adds: prepareConfigInstance() for structural enrichment.
- */
 @Injectable()
 export class ConfigInstancesService {
   constructor(
@@ -42,6 +40,10 @@ export class ConfigInstancesService {
     private readonly repo: Repository<ConfigInstanceEntity>,
     private readonly modulesService: ModulesService,
   ) {}
+
+  // ---------------------------
+  // CRUD OPERATIONS
+  // ---------------------------
 
   async create(
     userId: string,
@@ -53,7 +55,6 @@ export class ConfigInstancesService {
       moduleName,
       configData,
     });
-
     return this.repo.save(entity);
   }
 
@@ -65,9 +66,13 @@ export class ConfigInstancesService {
     if (!existing) {
       return null;
     }
-
     existing.configData = configData;
     return this.repo.save(existing);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await this.repo.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 
   findById(id: string): Promise<ConfigInstanceEntity | null> {
@@ -78,15 +83,10 @@ export class ConfigInstancesService {
     return this.repo.find({ where: { userId } });
   }
 
-  async delete(id: string): Promise<boolean> {
-    const result = await this.repo.delete(id);
-    return (result.affected ?? 0) > 0;
-  }
+  // ---------------------------
+  // FORMATTED USER OUTPUT (Step 14)
+  // ---------------------------
 
-  /**
-   * Returns a formatted representation of config instances for the user.
-   * No configData is exposed.
-   */
   async findAllForUserFormatted(
     userId: string,
   ): Promise<FormattedConfigInstanceResult> {
@@ -106,35 +106,18 @@ export class ConfigInstancesService {
     };
   }
 
-  /**
-   * NEW IN STEP 20:
-   *
-   * prepareConfigInstance()
-   *
-   * Structural enrichment only:
-   *  - Loads a ConfigInstance by id.
-   *  - Loads the normalized module catalog via ModulesService.listModules().
-   *  - Finds the module whose name matches configInstance.moduleName.
-   *  - Returns a PreparedConfigInstance combining both.
-   *
-   * Rules:
-   *  - Throws NotFoundException("Config instance not found") if instance is missing.
-   *  - Throws NotFoundException("Module not found") if catalog has no matching module.
-   *  - Does NOT modify configData.
-   *  - Does NOT validate or merge configData.
-   *  - Does NOT perform any SFTP or schema loader operations.
-   */
+  // ---------------------------
+  // PREPARED CONFIG INSTANCE (Step 20)
+  // ---------------------------
+
   async prepareConfigInstance(id: string): Promise<PreparedConfigInstance> {
-    // 1. Load the config instance
     const instance = await this.findById(id);
     if (!instance) {
       throw new NotFoundException("Config instance not found");
     }
 
-    // 2. Load the normalized module catalog
     const catalog = await this.modulesService.listModules();
 
-    // 3. Find the module whose name matches the instance.moduleName
     const matchedModule: ModuleCatalogEntry | undefined = catalog.find(
       (entry) => entry.name === instance.moduleName,
     );
@@ -143,7 +126,6 @@ export class ConfigInstancesService {
       throw new NotFoundException("Module not found");
     }
 
-    // 4. Map matchedModule into the moduleMeta shape required by PreparedConfigInstance
     const moduleMeta: PreparedConfigInstance["moduleMeta"] = {
       id: matchedModule.id,
       name: matchedModule.name,
@@ -161,15 +143,47 @@ export class ConfigInstancesService {
       tier: matchedModule.tier,
     };
 
-    // 5. Construct the prepared configuration instance
-    const prepared: PreparedConfigInstance = {
+    return {
       id: instance.id,
       userId: instance.userId,
       moduleName: instance.moduleName,
       configData: instance.configData,
       moduleMeta,
     };
+  }
 
-    return prepared;
+  // ---------------------------
+  // CONFIG FILE MAPPING (Step 21)
+  // ---------------------------
+
+  async mapConfigFiles(id: string): Promise<InstanceFileMapping> {
+    const instance = await this.findById(id);
+    if (!instance) {
+      throw new NotFoundException("Config instance not found");
+    }
+
+    const catalog = await this.modulesService.listModules();
+
+    const moduleEntry: ModuleCatalogEntry | undefined = catalog.find(
+      (m) => m.name === instance.moduleName,
+    );
+
+    if (!moduleEntry) {
+      throw new NotFoundException("Module not found");
+    }
+
+    const files: ConfigFileBinding[] = moduleEntry.configFiles.map((cf) => ({
+      fileId: cf.id,
+      path: cf.path,
+      format: cf.format,
+      required: cf.required,
+      metadata: cf.metadata as Record<string, any> | undefined,
+    }));
+
+    return {
+      configInstanceId: instance.id,
+      moduleName: instance.moduleName,
+      files,
+    };
   }
 }
