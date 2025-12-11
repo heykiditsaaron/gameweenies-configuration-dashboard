@@ -15,18 +15,20 @@ import { ConfigInstancesService } from "./config-instances.service";
 export class ConfigInstancesController {
   constructor(private readonly configInstances: ConfigInstancesService) {}
 
-  // ... existing endpoints: CRUD, simulate-apply, apply-summary, apply-readiness ...
+  // ... existing CRUD, simulate-apply, apply-summary, apply-readiness endpoints ...
 
   /**
-   * STEP 27:
-   * Full apply-pipeline summary (structural only).
+   * STEP 28:
+   * PUBLIC ENDPOINT — Full Apply Pipeline Summary.
    *
    * GET /config-instances/:id/apply-pipeline-summary
    *
+   * NOTE:
    * - No body
    * - No DTO
-   * - Returns fully aggregated structural information
-   * - NotFoundException propagates unchanged
+   * - Pass-through only
+   * - No wrapping or transformation of output
+   * - Errors propagate unchanged
    */
   @Get(":id/apply-pipeline-summary")
   async getFullApplyPipelineSummary(@Param("id") id: string) {
