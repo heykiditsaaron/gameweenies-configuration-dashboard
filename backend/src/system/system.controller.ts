@@ -12,64 +12,61 @@ export class SystemController {
   ) {}
 
   /**
-   * STEP 29:
-   * Basic system info endpoint.
+   * /system/info
+   *
+   * Basic system metadata, structurally derived from SystemConfigService
+   * and the normalized module catalog.
    */
   @Get("info")
   async getSystemInfo() {
     const env = this.systemConfig.getEnvironmentConfig();
-
-    const tier = this.systemConfig.getDeploymentTier(); // always "mvp" in Phase 3
-    const nodeEnv = env.app.env;
-    const sftpServerCount = Array.isArray(env.sftp?.servers)
-      ? env.sftp.servers.length
-      : 0;
-
-    // Normalized module catalog
+    const app = this.systemConfig.getAppConfig();
+    const sftp = this.systemConfig.getSftpConfig();
     const modules = await this.modulesService.listModules();
-    const moduleCount = modules.length;
 
     return {
-      version: "0.0.1",
-      tier,
-      nodeEnv,
-      moduleCount,
-      sftpServerCount,
+      // Version: structural, falls back to a safe default if not present
+      version: (app as any).version ?? "0.0.0-dev",
+      tier: this.systemConfig.getDeploymentTier(),
+      nodeEnv: env.app.env,
+      moduleCount: modules.length,
+      sftpServerCount: sftp.servers.length,
+      // Static build identifier for Phase 3
       build: "dev",
     };
   }
 
   /**
-   * STEP 30:
-   * Full deep structural health endpoint.
+   * /system/health/full
+   *
+   * Deep structural health/status info — NOT a liveness probe.
+   * No I/O, no SFTP, no schema validation, no DB queries.
    */
   @Get("health/full")
-  async getFullHealth() {
+  async getFullSystemHealth() {
+    // 1. Environment + SFTP info
     const env = this.systemConfig.getEnvironmentConfig();
-
+    const sftp = this.systemConfig.getSftpConfig();
     const tier = this.systemConfig.getDeploymentTier();
-    const nodeEnv = env.app.env;
+    const diagnostics = this.systemConfig.getDiagnosticInfo();
 
-    const sftpServerCount = Array.isArray(env.sftp?.servers)
-      ? env.sftp.servers.length
-      : 0;
-
+    // 2. Normalized module catalog count
     const modules = await this.modulesService.listModules();
     const moduleCount = modules.length;
 
-    const dbConfigPresent = !!this.systemConfig.getDatabaseConfig();
+    // 3. Structural DB config presence
+    const databaseConfigPresent = !!this.systemConfig.getDatabaseConfig();
 
+    // 4. Raw module discovery presence
     const raw = await this.systemConfig.getRawDiscoveredModules();
     const hasRawModules = Array.isArray(raw) && raw.length > 0;
 
-    const diagnostics = this.systemConfig.getDiagnosticInfo();
-
     return {
       tier,
-      nodeEnv,
+      nodeEnv: env.app.env,
       moduleCount,
-      sftpServerCount,
-      databaseConfigPresent: dbConfigPresent,
+      sftpServerCount: sftp.servers.length,
+      databaseConfigPresent,
       hasRawModules,
       diagnostics,
     };
